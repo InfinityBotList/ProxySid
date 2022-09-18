@@ -56,6 +56,8 @@ func main() {
 			c.Append(k, v...)
 		}
 
+		fmt.Println(c.Method(), c.Params("*"), "returns", resp.StatusCode)
+
 		c.SendStream(resp.Body)
 
 		return nil
@@ -92,6 +94,10 @@ func makeReq(method string, client *http.Client, headers map[string]string, path
 
 	if v, ok := headers["Authorization"]; ok {
 		req.Header.Set("Authorization", v)
+	}
+
+	if v, ok := headers["Content-Type"]; ok {
+		req.Header.Set("Content-Type", v)
 	}
 
 	res, err := client.Do(req)

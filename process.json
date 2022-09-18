@@ -1,0 +1,7 @@
+[
+	{
+		"name": "BaseProxy",
+		"script": "unbuffer ./proxysid",
+		"cwd": "/root/proxysid/"
+	}
+]
