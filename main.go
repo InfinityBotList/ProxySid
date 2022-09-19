@@ -6,7 +6,6 @@ import (
 	"io"
 	"net"
 	"net/http"
-	"strings"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
@@ -44,15 +43,41 @@ func main() {
 	})
 
 	app.All("/*", func(c *fiber.Ctx) error {
-		resp, err := makeReq(c.Method(), &client, c.GetReqHeaders(), c.Params("*"), c.Body())
-
-		c.Status(resp.StatusCode)
+		req, err := http.NewRequest(c.Method(), "https://discord.com/"+c.Params("*"), bytes.NewReader(c.Body()))
 
 		if err != nil {
 			c.Append("X-Proxy-Error", err.Error())
+			return c.SendStatus(502)
 		}
 
-		for k, v := range resp.Headers {
+		headers := c.GetReqHeaders()
+
+		if v, ok := headers["X-Audit-Log-Reason"]; ok {
+			req.Header.Set("X-Audit-Log-Reason", v)
+		}
+
+		if v, ok := headers["Authorization"]; ok {
+			req.Header.Set("Authorization", v)
+		}
+
+		if v, ok := headers["Content-Type"]; ok {
+			req.Header.Set("Content-Type", v)
+		}
+
+		if v, ok := headers["User-Agent"]; ok {
+			req.Header.Set("User-Agent", v+" (proxysid")
+		}
+
+		resp, err := client.Do(req)
+
+		if err != nil {
+			c.Append("X-Proxy-Error", err.Error())
+			return c.SendStatus(502)
+		}
+
+		c.Status(resp.StatusCode)
+
+		for k, v := range resp.Header {
 			c.Append(k, v...)
 		}
 
@@ -68,48 +93,6 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-}
-
-type Req struct {
-	Headers    map[string][]string
-	Body       io.Reader
-	StatusCode int
-}
-
-func makeReq(method string, client *http.Client, headers map[string]string, path string, body []byte) (Req, error) {
-	httpReq := Req{
-		Headers:    make(map[string][]string),
-		StatusCode: 502,
-	}
-
-	req, err := http.NewRequest(strings.ToUpper(method), "https://discord.com/"+path, bytes.NewReader(body))
-
-	if err != nil {
-		return httpReq, err
-	}
-
-	if v, ok := headers["X-Audit-Log-Reason"]; ok {
-		req.Header.Set("X-Audit-Log-Reason", v)
-	}
-
-	if v, ok := headers["Authorization"]; ok {
-		req.Header.Set("Authorization", v)
-	}
-
-	if v, ok := headers["Content-Type"]; ok {
-		req.Header.Set("Content-Type", v)
-	}
-
-	res, err := client.Do(req)
-
-	if err != nil {
-		return httpReq, err
-	}
-
-	httpReq.StatusCode = res.StatusCode
-	httpReq.Body = res.Body
-	httpReq.Headers = res.Header
-	return httpReq, nil
 }
 
 func newClient() http.Client {
