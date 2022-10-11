@@ -1,1 +1,0 @@
-PORT=3000 DISCORD_TOKEN="ODcwNzI4MDc4MjI4MzI0Mzgy.G2b5mW.cFWZE1lzDfwUKDBxwJf1SI4MiawMFkY7aDcEtY" target/release/twilight-http-proxy
