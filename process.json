@@ -1,7 +1,7 @@
 [
 	{
 		"name": "BaseProxy",
-		"script": "unbuffer ./nirn-proxy",
+		"script": "unbuffer ./nirn-run",
 		"cwd": "/root/proxysid/"
 	}
 ]
